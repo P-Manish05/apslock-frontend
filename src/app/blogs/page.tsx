@@ -3,9 +3,10 @@ import FadeIn from "@/components/shared/FadeIn";
 import BlogFilter from "@/components/blog/BlogFilter";
 import GrainBlobs from "@/components/shared/GrainBlobs";
 import { blogPosts as fallbackPosts, blogCategories } from "@/lib/data";
+import { getBlogPosts } from "@/lib/strapi";
 
 export const metadata: Metadata = {
-  title: "Blog — Strategy, Design & Growth Insights",
+  title: "Blog – Strategy, Design & Growth Insights",
   description:
     "Expert insights on brand strategy, web design, SEO, performance marketing, and digital growth from the APSLOCK team in Atlanta.",
   alternates: {
@@ -13,12 +14,19 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 60; // revalidate every minute
+export const revalidate = 60;
 
 export default async function BlogsPage() {
-  // Always use the curated local posts — no Sanity merge
-  const posts = fallbackPosts;
-  const categoriesToUse = blogCategories;
+  let posts = fallbackPosts;
+
+  try {
+    const strapiPosts = await getBlogPosts();
+    if (strapiPosts && strapiPosts.length > 0) {
+      posts = strapiPosts;
+    }
+  } catch (error) {
+    console.warn("Strapi unavailable, using fallback data:", error);
+  }
 
   return (
     <div className="relative overflow-hidden" style={{ background: "var(--bg)" }}>
@@ -28,7 +36,6 @@ export default async function BlogsPage() {
       <section className="pt-36 pb-16 md:pt-44 md:pb-20 relative z-10">
         <div className="container-wide">
           <FadeIn>
-
             <h1 className="text-hero text-text max-w-2xl">
               Ideas &amp; insights
             </h1>
@@ -39,10 +46,10 @@ export default async function BlogsPage() {
         </div>
       </section>
 
-      {/* Filter + List — transparent, same blob shows through */}
+      {/* Filter + List */}
       <section className="pb-24 md:pb-32 relative z-10">
         <div className="container-wide">
-          <BlogFilter posts={posts} categories={categoriesToUse} />
+          <BlogFilter posts={posts} categories={blogCategories} />
         </div>
       </section>
     </div>

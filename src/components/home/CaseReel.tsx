@@ -6,12 +6,12 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { featuredCases } from "@/lib/data";
+import type { FeaturedCase } from "@/lib/data";
 
 gsap.registerPlugin(ScrollTrigger);
 
 // ── Desktop Pinned Reel ───────────────────────────────────
-function DesktopReel() {
+function DesktopReel({ cases }: { cases: FeaturedCase[] }) {
   const wrapRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const [active, setActive] = useState(0);
@@ -47,10 +47,8 @@ function DesktopReel() {
             const absDist = Math.min(Math.abs(rawDist), 1.5);
 
             const isLast = i === cards.length - 1;
-            
-            // Prevent the last item from drifting upwards to close the gap to the next section
             const effectiveRawDistY = (isLast && rawDist > 0) ? 0 : rawDist;
-            
+
             const scale = 1 - ease(Math.min(absDist, 1)) * 0.3;
             const y = -effectiveRawDistY * 35;
             const rotate = rawDist * 2;
@@ -81,14 +79,12 @@ function DesktopReel() {
     return () => ctx.revert();
   }, []);
 
-  const ac = featuredCases[active];
-
   return (
     <section
       ref={wrapRef}
       aria-label="Our achievements"
       className="relative"
-      style={{ height: `${featuredCases.length * 90}vh` }}
+      style={{ height: `${cases.length * 90}vh` }}
     >
       {/* Section gradient bg */}
       <div
@@ -133,12 +129,12 @@ function DesktopReel() {
             className="relative flex flex-col justify-center w-[42%] shrink-0 border-r border-[var(--border)]"
             style={{ padding: "6vh 4vw 5vh 5vw" }}
           >
-            {/* Big numeral — top-left positioning */}
+            {/* Big numeral */}
             <div
               aria-hidden="true"
               className="absolute top-10 left-10 select-none pointer-events-none"
             >
-              {featuredCases.map((c, i) => {
+              {cases.map((c, i) => {
                 const isActive = i === active;
                 const isPast = i < active;
                 return (
@@ -164,9 +160,9 @@ function DesktopReel() {
               })}
             </div>
 
-            {/* Meta content — vertical mask-slide */}
+            {/* Meta content */}
             <div className="relative" style={{ minHeight: 240 }}>
-              {featuredCases.map((c, i) => {
+              {cases.map((c, i) => {
                 const isActive = i === active;
                 const isPast = i < active;
                 const dir = isPast ? -1 : 1;
@@ -236,7 +232,7 @@ function DesktopReel() {
                         }}
                       >
                         <Link
-                          href={`/expertise`}
+                          href="/expertise"
                           className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-6 py-3 font-sans text-sm font-medium text-[var(--text)] transition-all hover:border-[var(--text)] hover:bg-[var(--text)] hover:text-[var(--bg)]"
                         >
                           Explore possibilities
@@ -251,13 +247,10 @@ function DesktopReel() {
                 );
               })}
             </div>
-
-
           </div>
 
-          {/* ── RIGHT: floating stacked images (Polaroid frames) ── */}
+          {/* ── RIGHT: floating stacked images ── */}
           <div className="relative flex-1 overflow-hidden">
-            {/* Ambient glow */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0"
@@ -267,9 +260,8 @@ function DesktopReel() {
                 filter: "blur(60px)",
               }}
             />
-
             <div className="relative h-full w-full">
-              {featuredCases.map((c, i) => (
+              {cases.map((c, i) => (
                 <div
                   key={c.slug}
                   ref={(el) => setCardRef(el, i)}
@@ -289,7 +281,6 @@ function DesktopReel() {
                       "0 50px 100px -30px rgba(0,0,0,0.4), 0 20px 50px -15px rgba(0,0,0,0.25)",
                   }}
                 >
-                  {/* Image area */}
                   <div
                     className="relative flex-1 overflow-hidden"
                     style={{ borderRadius: 8 }}
@@ -302,7 +293,6 @@ function DesktopReel() {
                       className="object-cover"
                       priority={i === 0}
                     />
-                    {/* Soft inner vignette */}
                     <div
                       aria-hidden="true"
                       className="pointer-events-none absolute inset-0"
@@ -323,13 +313,12 @@ function DesktopReel() {
 }
 
 // ── Mobile fallback ───────────────────────────────────────
-function StackedLayout() {
+function StackedLayout({ cases }: { cases: FeaturedCase[] }) {
   return (
     <section
       aria-label="Our capabilities"
       className="border-t border-[var(--border)] bg-[var(--bg)]"
     >
-      {/* Section heading */}
       <div className="container-wide pt-20 pb-4 sm:pt-24">
         <div className="flex items-center gap-4 mb-6">
           <div className="h-px w-8 bg-[var(--accent)]" />
@@ -342,7 +331,7 @@ function StackedLayout() {
         </h2>
       </div>
 
-      {featuredCases.map((c) => (
+      {cases.map((c) => (
         <article key={c.slug} className="mx-auto max-w-6xl px-6 py-16 sm:px-8">
           <div className="mb-4 flex items-center gap-3">
             <span className="inline-flex items-center rounded-full border border-[var(--border)] px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -361,8 +350,6 @@ function StackedLayout() {
           <p className="mb-8 max-w-md font-sans text-[0.95rem] leading-[1.55] text-[var(--text-muted)]">
             {c.subtitle ?? c.description}
           </p>
-
-          {/* Polaroid-style image frame */}
           <div
             className="mb-6 w-full overflow-hidden rounded-xl"
             style={{
@@ -381,9 +368,8 @@ function StackedLayout() {
               />
             </div>
           </div>
-
           <Link
-            href={`/expertise`}
+            href="/expertise"
             className="group inline-flex items-center gap-2 font-sans text-sm font-medium text-[var(--text)] underline underline-offset-4"
           >
             Explore possibilities
@@ -396,7 +382,7 @@ function StackedLayout() {
 }
 
 // ── Main export ───────────────────────────────────────────
-export default function CaseReel() {
+export default function CaseReel({ cases }: { cases: FeaturedCase[] }) {
   const [mode, setMode] = useState<"stacked" | "desktop">("stacked");
 
   useEffect(() => {
@@ -413,5 +399,5 @@ export default function CaseReel() {
     };
   }, []);
 
-  return mode === "desktop" ? <DesktopReel /> : <StackedLayout />;
+  return mode === "desktop" ? <DesktopReel cases={cases} /> : <StackedLayout cases={cases} />;
 }

@@ -194,6 +194,7 @@ export interface CaseStudy {
   client: string;
   category: string;
   description: string;
+  content?: string;
   metrics: { label: string; value: string }[];
   image: ImageAsset;
 }
@@ -446,7 +447,8 @@ export interface BlogPost {
   slug: string;
   title: string;
   excerpt: string;
-  content: string;
+  content?: string;
+  body?: any[];
   category: string;
   author: string;
   date: string;
@@ -845,7 +847,7 @@ export interface TeamMember {
   name: string;
   role: string;
   bio: string;
-  image: ImageAsset;
+  image?: ImageAsset;
 }
 
 export const teamMembers: TeamMember[] = [

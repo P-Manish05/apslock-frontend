@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { blogPosts as fallbackPosts } from "@/lib/data";
-import { client } from "@/sanity/lib/client";
-import { getPostBySlugQuery, getPostsQuery } from "@/sanity/lib/queries";
+import { getBlogPosts, getBlogPostBySlug } from "@/lib/strapi";
 import { formatDate } from "@/lib/utils";
 import BlogPostContent from "@/components/blog/BlogPostContent";
-import FadeIn from "@/components/shared/FadeIn";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export const revalidate = 60;
+
 export async function generateStaticParams() {
-  if (process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
-    const posts = await client.fetch(getPostsQuery);
-    return posts.map((post: any) => ({ slug: post.slug }));
+  try {
+    const posts = await getBlogPosts();
+    if (posts && posts.length > 0) {
+      return posts.map((post: any) => ({ slug: post.slug }));
+    }
+  } catch {
+    // fallback
   }
   return fallbackPosts.map((post) => ({ slug: post.slug }));
 }
@@ -25,19 +27,23 @@ export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  
-  // Local posts take priority
-  let post: any = fallbackPosts.find((p) => p.slug === slug);
-  if (!post && process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
-    try {
-      post = await client.fetch(getPostBySlugQuery, { slug });
-    } catch { /* silent */ }
+
+  let post: any = null;
+
+  try {
+    post = await getBlogPostBySlug(slug);
+  } catch {
+    // fallback
+  }
+
+  if (!post) {
+    post = fallbackPosts.find((p) => p.slug === slug);
   }
 
   if (!post) return {};
 
-  const title = post.metaTitle || post.title;
-  const description = post.metaDescription || post.excerpt;
+  const title = post.title;
+  const description = post.excerpt;
 
   return {
     title,
@@ -49,16 +55,18 @@ export async function generateMetadata({
       title,
       description,
       type: "article",
-      publishedTime: post.publishedAt || post.date,
+      publishedTime: post.date,
       authors: [post.author],
-      images: post.image?.src ? [
-        {
-          url: post.image.src,
-          width: post.image.width || 1200,
-          height: post.image.height || 630,
-          alt: post.image.alt || post.title,
-        },
-      ] : [],
+      images: post.image?.src
+        ? [
+            {
+              url: post.image.src,
+              width: post.image.width || 1200,
+              height: post.image.height || 630,
+              alt: post.image.alt || post.title,
+            },
+          ]
+        : [],
     },
     twitter: {
       card: "summary_large_image",
@@ -71,29 +79,28 @@ export async function generateMetadata({
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  
-  // Always check local posts first — guaranteed to exist
-  const localPost = fallbackPosts.find((p) => p.slug === slug);
-  
-  let post: any = localPost;
+
+  let post: any = null;
   let allPosts: any[] = fallbackPosts;
-  
-  // Only query Sanity for slugs not found locally
-  if (!localPost && process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
-    try {
-      post = await client.fetch(getPostBySlugQuery, { slug });
-      const sanityAll = await client.fetch(getPostsQuery);
-      if (sanityAll?.length) allPosts = [...fallbackPosts, ...sanityAll];
-    } catch {
-      // silent — fallbackPosts still used
+
+  try {
+    post = await getBlogPostBySlug(slug);
+    const strapiAll = await getBlogPosts();
+    if (strapiAll && strapiAll.length > 0) {
+      allPosts = strapiAll;
     }
+  } catch {
+    // fallback
+  }
+
+  if (!post) {
+    post = fallbackPosts.find((p) => p.slug === slug);
   }
 
   if (!post) {
     notFound();
   }
 
-  // Find related posts (same category, excluding current)
   const relatedPosts = allPosts
     .filter((p: any) => p.category === post.category && p.slug !== post.slug)
     .slice(0, 3);
@@ -101,15 +108,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const schema = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    "headline": post.title,
-    "image": post.image?.src ? [post.image.src] : [],
-    "datePublished": post.publishedAt || post.date,
-    "dateModified": post.publishedAt || post.date,
-    "author": [{
-      "@type": "Person",
-      "name": post.author,
-    }],
-    "description": post.metaDescription || post.excerpt,
+    headline: post.title,
+    image: post.image?.src ? [post.image.src] : [],
+    datePublished: post.date,
+    dateModified: post.date,
+    author: [{ "@type": "Person", name: post.author }],
+    description: post.excerpt,
   };
 
   return (
