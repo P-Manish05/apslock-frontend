@@ -12,7 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const STRAPI_URL = "http://localhost:1337";
-const STRAPI_TOKEN = "aa659ecdf6e43006fe75daa8f52d9f33885dd646628a027a9793dfa599ca2bc4f47092c606e53eaf5d2c4c5d570d8d000898f4de78e01ad92b814be55771418c02d15123eafc7bce86f56b4dc14946629cce7bf5bd3f04d824cfe069fe02b935acca81f72e4899033fb18c98e80bad09395ad56fa741c636ac4a33153781c056"; // same token from .env.local
+const STRAPI_TOKEN = "eee36b74da8b616d3ddd7eb409ae9feed65abd0488e34afe1e9623ff6f89ad13b9f948493a4b46e91c52c59c737adac7a975de8f012ba7d9b7fb7959092b5168a28037b8d1d4bc75f6f1fa0bee92e02c3326c357ca9352f836ef590e46874eb20fec8d17ba78101c866c5a3513931fa42deeb9d1dc0817171bed80fca4a76280"; // same token from .env.local
 
 const headers = {
   Authorization: `Bearer ${STRAPI_TOKEN}`,
